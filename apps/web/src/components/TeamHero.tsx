@@ -1,12 +1,15 @@
 import type { Fixture } from "@football-portal/shared-types";
-import { formatMatchDate, initials } from "@/lib/format";
+import { formatMatchDate } from "@/lib/format";
+import TeamBadge from "./TeamBadge";
 
 export default function TeamHero({
   teamName,
+  teamLogo,
   lastResult,
   nextFixture,
 }: {
   teamName: string;
+  teamLogo: string | null;
   lastResult: Fixture | null;
   nextFixture: Fixture | null;
 }) {
@@ -14,22 +17,7 @@ export default function TeamHero({
     <div style={{ display: "flex", gap: 24 }}>
       <div className="card" style={{ flex: 2, padding: "28px 32px", display: "flex", flexDirection: "column", gap: 18 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <div
-            style={{
-              width: 60,
-              height: 60,
-              borderRadius: 16,
-              background: "var(--surface-alt)",
-              color: "var(--accent)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 800,
-              fontSize: 18,
-            }}
-          >
-            {initials(teamName)}
-          </div>
+          <TeamBadge logo={teamLogo} name={teamName} size={60} radius={16} />
           <div style={{ fontSize: 28, fontWeight: 800 }}>{teamName}</div>
         </div>
         <div style={{ height: 1, background: "var(--border)" }} />
@@ -38,9 +26,13 @@ export default function TeamHero({
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--text-faint)", marginBottom: 8 }}>
               LAST RESULT · {lastResult.status}
             </div>
-            <div className="mono" style={{ fontSize: 26, fontWeight: 800 }}>
-              {lastResult.home.team.name} <span style={{ color: "var(--accent)" }}>{lastResult.home.goals ?? "-"}</span> —{" "}
-              <span style={{ color: "var(--text-dim)" }}>{lastResult.away.goals ?? "-"}</span> {lastResult.away.team.name}
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <TeamBadge logo={lastResult.home.team.logo} name={lastResult.home.team.name} size={28} />
+              <div className="mono" style={{ fontSize: 26, fontWeight: 800 }}>
+                {lastResult.home.team.name} <span style={{ color: "var(--accent)" }}>{lastResult.home.goals ?? "-"}</span> —{" "}
+                <span style={{ color: "var(--text-dim)" }}>{lastResult.away.goals ?? "-"}</span> {lastResult.away.team.name}
+              </div>
+              <TeamBadge logo={lastResult.away.team.logo} name={lastResult.away.team.name} size={28} />
             </div>
             <div style={{ fontSize: 12, color: "var(--text-faint)", marginTop: 6 }}>
               {formatMatchDate(lastResult.date)} {lastResult.venue ? `· ${lastResult.venue}` : ""}
@@ -66,9 +58,16 @@ export default function TeamHero({
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--accent)", marginBottom: 12 }}>
               NEXT MATCH
             </div>
-            <div style={{ fontSize: 20, fontWeight: 800 }}>
-              vs {nextFixture.home.team.name === teamName ? nextFixture.away.team.name : nextFixture.home.team.name}
-            </div>
+            {(() => {
+              const opponent =
+                nextFixture.home.team.name === teamName ? nextFixture.away.team : nextFixture.home.team;
+              return (
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <TeamBadge logo={opponent.logo} name={opponent.name} size={32} />
+                  <div style={{ fontSize: 20, fontWeight: 800 }}>vs {opponent.name}</div>
+                </div>
+              );
+            })()}
             <div style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 6 }}>
               {formatMatchDate(nextFixture.date)} {nextFixture.venue ? `· ${nextFixture.venue}` : ""}
             </div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Team } from "@football-portal/shared-types";
-import { initials } from "@/lib/format";
+import TeamBadge from "./TeamBadge";
 
 export default function FavoriteTeamPicker({ teams }: { teams: Team[] }) {
   const router = useRouter();
@@ -51,21 +51,7 @@ export default function FavoriteTeamPicker({ teams }: { teams: Team[] }) {
               opacity: selecting && selecting !== team.id ? 0.5 : 1,
             }}
           >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: "50%",
-                background: "var(--surface-alt)",
-                color: "var(--accent)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
-              }}
-            >
-              {initials(team.name)}
-            </div>
+            <TeamBadge logo={team.logo} name={team.name} size={48} />
             <span style={{ fontWeight: 700, fontSize: 14, textAlign: "center" }}>
               {selecting === team.id ? "Saving…" : team.name}
             </span>

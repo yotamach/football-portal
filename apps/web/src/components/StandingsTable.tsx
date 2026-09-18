@@ -1,4 +1,5 @@
 import type { Standing } from "@football-portal/shared-types";
+import TeamBadge from "./TeamBadge";
 
 const COLS = "32px 1fr 36px 36px 36px 36px 44px 44px";
 
@@ -53,7 +54,10 @@ export default function StandingsTable({
             }}
           >
             <div>{row.rank}</div>
-            <div style={{ fontWeight: isHighlighted ? 700 : 600 }}>{row.team.name}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: isHighlighted ? 700 : 600 }}>
+              <TeamBadge logo={row.team.logo} name={row.team.name} size={22} />
+              {row.team.name}
+            </div>
             <div>{row.played}</div>
             <div>{row.win}</div>
             <div>{row.draw}</div>

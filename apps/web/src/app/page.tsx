@@ -92,7 +92,12 @@ function Dashboard({
 }: Awaited<ReturnType<typeof loadDashboard>> & { highlightTeamId: number }) {
   return (
     <>
-      <TeamHero teamName={team?.name ?? "Your team"} lastResult={lastResult} nextFixture={nextFixture} />
+      <TeamHero
+        teamName={team?.name ?? "Your team"}
+        teamLogo={team?.logo ?? null}
+        lastResult={lastResult}
+        nextFixture={nextFixture}
+      />
 
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
         <div style={{ flex: 2 }}>

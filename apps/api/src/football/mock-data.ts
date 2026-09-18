@@ -15,15 +15,18 @@ import type {
  * entities — swap in a real API-Football key to get live data instead.
  */
 
+// Served by the web app's /public/logos folder (see apps/web/public/logos/*.svg) — fictional
+// crests since these are fictional demo teams. A real API_FOOTBALL_KEY replaces these entirely
+// with the provider's own absolute logo URLs (api-football.mappers.ts passes them through as-is).
 export const MOCK_TEAMS: Record<number, Team> = {
-  101: { id: 101, name: "Atlas United", shortName: "ATU", logo: null, country: "Fictionland", founded: 1948, venue: "Meridian Stadium" },
-  102: { id: 102, name: "Silvermere United", shortName: "SIL", logo: null, country: "Fictionland", founded: 1911, venue: "Silvermere Park" },
-  103: { id: 103, name: "Ironbridge Rovers", shortName: "IBR", logo: null, country: "Fictionland", founded: 1967, venue: "Ironbridge Ground" },
-  104: { id: 104, name: "Northgate Athletic", shortName: "NGA", logo: null, country: "Fictionland", founded: 1923, venue: "Northgate Arena" },
-  105: { id: 105, name: "Harbor City FC", shortName: "HCF", logo: null, country: "Fictionland", founded: 1955, venue: "Harborside Stadium" },
-  106: { id: 106, name: "Kestrel Town", shortName: "KTN", logo: null, country: "Fictionland", founded: 1932, venue: "Kestrel Field" },
-  107: { id: 107, name: "Bellcross FC", shortName: "BLX", logo: null, country: "Fictionland", founded: 1979, venue: "Bellcross Park" },
-  108: { id: 108, name: "Foxhall Rovers", shortName: "FXH", logo: null, country: "Fictionland", founded: 1961, venue: "Foxhall Ground" },
+  101: { id: 101, name: "Atlas United", shortName: "ATU", logo: "/logos/atlas-united.svg", country: "Fictionland", founded: 1948, venue: "Meridian Stadium" },
+  102: { id: 102, name: "Silvermere United", shortName: "SIL", logo: "/logos/silvermere-united.svg", country: "Fictionland", founded: 1911, venue: "Silvermere Park" },
+  103: { id: 103, name: "Ironbridge Rovers", shortName: "IBR", logo: "/logos/ironbridge-rovers.svg", country: "Fictionland", founded: 1967, venue: "Ironbridge Ground" },
+  104: { id: 104, name: "Northgate Athletic", shortName: "NGA", logo: "/logos/northgate-athletic.svg", country: "Fictionland", founded: 1923, venue: "Northgate Arena" },
+  105: { id: 105, name: "Harbor City FC", shortName: "HCF", logo: "/logos/harbor-city-fc.svg", country: "Fictionland", founded: 1955, venue: "Harborside Stadium" },
+  106: { id: 106, name: "Kestrel Town", shortName: "KTN", logo: "/logos/kestrel-town.svg", country: "Fictionland", founded: 1932, venue: "Kestrel Field" },
+  107: { id: 107, name: "Bellcross FC", shortName: "BLX", logo: "/logos/bellcross-fc.svg", country: "Fictionland", founded: 1979, venue: "Bellcross Park" },
+  108: { id: 108, name: "Foxhall Rovers", shortName: "FXH", logo: "/logos/foxhall-rovers.svg", country: "Fictionland", founded: 1961, venue: "Foxhall Ground" },
 };
 
 export const FAVORITE_TEAM_ID = 101;
@@ -113,7 +116,7 @@ export const MOCK_STANDINGS: Standing = {
 };
 
 export const MOCK_SQUAD: Squad = {
-  team: { id: 101, name: "Atlas United", logo: null },
+  team: { id: 101, name: "Atlas United", logo: MOCK_TEAMS[101].logo },
   players: [
     { id: 1, name: "M. Keller", age: 29, number: 1, position: "Goalkeeper", photo: null, nationality: "Fictionland" },
     { id: 2, name: "A. Costa", age: 26, number: 2, position: "Defender", photo: null, nationality: "Fictionland" },
@@ -155,8 +158,8 @@ function buildFixture(
     elapsedMinutes: elapsed,
     venue: MOCK_TEAMS[homeId].venue,
     league: { id: leagueId, name: leagueName, logo: null, country: MOCK_TEAMS[homeId].country },
-    home: { team: { id: MOCK_TEAMS[homeId].id, name: MOCK_TEAMS[homeId].name, logo: null }, goals: homeGoals },
-    away: { team: { id: MOCK_TEAMS[awayId].id, name: MOCK_TEAMS[awayId].name, logo: null }, goals: awayGoals },
+    home: { team: { id: MOCK_TEAMS[homeId].id, name: MOCK_TEAMS[homeId].name, logo: MOCK_TEAMS[homeId].logo }, goals: homeGoals },
+    away: { team: { id: MOCK_TEAMS[awayId].id, name: MOCK_TEAMS[awayId].name, logo: MOCK_TEAMS[awayId].logo }, goals: awayGoals },
   };
 }
 
