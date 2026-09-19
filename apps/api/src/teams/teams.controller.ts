@@ -1,9 +1,15 @@
-import { Controller, Get, NotFoundException, Param, ParseIntPipe } from "@nestjs/common";
+import { Controller, Get, NotFoundException, Param, ParseIntPipe, Query } from "@nestjs/common";
 import { FootballApiService } from "../football/football-api.service";
 
 @Controller("teams")
 export class TeamsController {
   constructor(private readonly football: FootballApiService) {}
+
+  @Get("search")
+  async search(@Query("q") q: string) {
+    if (!q || q.trim().length < 1) return [];
+    return this.football.searchTeams(q);
+  }
 
   @Get(":id")
   async detail(@Param("id", ParseIntPipe) id: number) {
@@ -37,5 +43,11 @@ export class TeamsController {
   @Get(":id/next-fixture")
   async nextFixture(@Param("id", ParseIntPipe) id: number) {
     return this.football.getNextFixture(id);
+  }
+
+  @Get(":id/last-fixtures")
+  async lastFixtures(@Param("id", ParseIntPipe) id: number, @Query("count") count?: string) {
+    const n = count ? parseInt(count, 10) : 5;
+    return this.football.getTeamLastFixtures(id, n);
   }
 }

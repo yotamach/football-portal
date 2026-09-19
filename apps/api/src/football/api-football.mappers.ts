@@ -4,6 +4,7 @@ import type {
   League,
   Player,
   PlayerPosition,
+  PlayerStatEntry,
   Squad,
   Standing,
   Team,
@@ -47,6 +48,7 @@ const POSITION_MAP: Record<string, PlayerPosition> = {
 };
 
 export function mapLeague(raw: any): League {
+  const seasons: number[] = (raw.seasons ?? []).map((s: any) => s.year).filter((y: unknown) => typeof y === "number");
   const currentSeason =
     raw.seasons?.find((s: any) => s.current)?.year ?? raw.seasons?.at(-1)?.year ?? new Date().getFullYear();
   return {
@@ -60,6 +62,7 @@ export function mapLeague(raw: any): League {
       flag: raw.country?.flag ?? null,
     },
     season: currentSeason,
+    seasons: seasons.length > 0 ? seasons.sort((a, b) => b - a) : [currentSeason],
   };
 }
 
@@ -112,6 +115,25 @@ export function mapSquad(raw: any): Squad {
         nationality: null,
       }),
     ),
+  };
+}
+
+export function mapPlayerStatEntry(raw: any, rank: number, category: "goals" | "assists"): PlayerStatEntry {
+  const stats = raw.statistics?.[0];
+  return {
+    rank,
+    player: {
+      id: raw.player?.id,
+      name: raw.player?.name ?? "Unknown",
+      photo: raw.player?.photo ?? null,
+      nationality: raw.player?.nationality ?? null,
+    },
+    team: {
+      id: stats?.team?.id,
+      name: stats?.team?.name ?? "Unknown",
+      logo: stats?.team?.logo ?? null,
+    },
+    value: (category === "goals" ? stats?.goals?.total : stats?.goals?.assists) ?? 0,
   };
 }
 

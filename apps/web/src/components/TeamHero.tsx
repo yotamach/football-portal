@@ -5,42 +5,17 @@ import TeamBadge from "./TeamBadge";
 export default function TeamHero({
   teamName,
   teamLogo,
-  lastResult,
   nextFixture,
 }: {
   teamName: string;
   teamLogo: string | null;
-  lastResult: Fixture | null;
   nextFixture: Fixture | null;
 }) {
   return (
     <div style={{ display: "flex", gap: 24 }}>
-      <div className="card" style={{ flex: 2, padding: "28px 32px", display: "flex", flexDirection: "column", gap: 18 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <TeamBadge logo={teamLogo} name={teamName} size={60} radius={16} />
-          <div style={{ fontSize: 28, fontWeight: 800 }}>{teamName}</div>
-        </div>
-        <div style={{ height: 1, background: "var(--border)" }} />
-        {lastResult ? (
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--text-faint)", marginBottom: 8 }}>
-              LAST RESULT · {lastResult.status}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <TeamBadge logo={lastResult.home.team.logo} name={lastResult.home.team.name} size={28} />
-              <div className="mono" style={{ fontSize: 26, fontWeight: 800 }}>
-                {lastResult.home.team.name} <span style={{ color: "var(--accent)" }}>{lastResult.home.goals ?? "-"}</span> —{" "}
-                <span style={{ color: "var(--text-dim)" }}>{lastResult.away.goals ?? "-"}</span> {lastResult.away.team.name}
-              </div>
-              <TeamBadge logo={lastResult.away.team.logo} name={lastResult.away.team.name} size={28} />
-            </div>
-            <div style={{ fontSize: 12, color: "var(--text-faint)", marginTop: 6 }}>
-              {formatMatchDate(lastResult.date)} {lastResult.venue ? `· ${lastResult.venue}` : ""}
-            </div>
-          </div>
-        ) : (
-          <div style={{ color: "var(--text-faint)", fontSize: 13 }}>No recent results.</div>
-        )}
+      <div className="card" style={{ flex: 2, padding: "28px 32px", display: "flex", alignItems: "center", gap: 18 }}>
+        <TeamBadge logo={teamLogo} name={teamName} size={60} radius={16} />
+        <div style={{ fontSize: 28, fontWeight: 800 }}>{teamName}</div>
       </div>
 
       <div

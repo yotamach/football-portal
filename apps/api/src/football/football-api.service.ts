@@ -2,22 +2,27 @@ import { HttpService } from "@nestjs/axios";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { firstValueFrom } from "rxjs";
-import type { Fixture, League, Squad, Standing, Team, Transfer } from "@football-portal/shared-types";
+import type { Fixture, League, PlayerStatEntry, Squad, Standing, Team, Transfer } from "@football-portal/shared-types";
 import type { AppConfig } from "../config/configuration";
 import { RedisCacheService } from "../cache/redis-cache.service";
-import { mapFixture, mapLeague, mapSquad, mapStanding, mapTeam } from "./api-football.mappers";
+import { mapFixture, mapLeague, mapPlayerStatEntry, mapSquad, mapStanding, mapTeam } from "./api-football.mappers";
 import {
   FAVORITE_TEAM_ID,
   getMockLastResult,
+  getMockLeagueRecentFixtures,
   getMockLiveFixtures,
   getMockNextFixture,
+  getMockTeamLastFixtures,
   getMockTodayFixtures,
+  getMockTopAssists,
+  getMockTopScorers,
   MOCK_LEAGUES,
   MOCK_SQUAD,
   MOCK_STANDINGS,
   MOCK_TEAMS,
   MOCK_TRANSFERS,
   searchMockFixturesByTeam,
+  searchMockTeams,
 } from "./mock-data";
 
 const TTL = {
@@ -27,6 +32,9 @@ const TTL = {
   SQUAD: 60 * 60 * 24,
   TRANSFERS: 60 * 60,
   FIXTURES_TODAY: 60,
+  TEAM_FIXTURES: 60 * 15,
+  LEAGUE_FIXTURES: 60 * 15,
+  TOP_STATS: 60 * 60,
 } as const;
 
 @Injectable()
@@ -183,5 +191,45 @@ export class FootballApiService {
     if (this.isMockMode) return teamId === FAVORITE_TEAM_ID ? getMockNextFixture() : null;
     const data = await this.request<{ response: any[] }>("/fixtures", { team: teamId, next: 1 });
     return data.response[0] ? mapFixture(data.response[0]) : null;
+  }
+
+  async searchTeams(query: string): Promise<Team[]> {
+    if (this.isMockMode) return searchMockTeams(query);
+    const data = await this.request<{ response: any[] }>("/teams", { search: query });
+    return data.response.map(mapTeam);
+  }
+
+  /** A team's most recent finished matches, most recent first. */
+  async getTeamLastFixtures(teamId: number, count: number): Promise<Fixture[]> {
+    if (this.isMockMode) return getMockTeamLastFixtures(teamId, count);
+    return this.cache.getOrSet(`team-fixtures:${teamId}:${count}`, TTL.TEAM_FIXTURES, async () => {
+      const data = await this.request<{ response: any[] }>("/fixtures", { team: teamId, last: count });
+      return data.response.map(mapFixture).reverse();
+    });
+  }
+
+  /** All matches from the league's most recently completed period, most recent first. */
+  async getLeagueRecentFixtures(leagueId: number, season: number, count = 10): Promise<Fixture[]> {
+    if (this.isMockMode) return getMockLeagueRecentFixtures(leagueId, count);
+    return this.cache.getOrSet(`league-fixtures:${leagueId}:${season}:${count}`, TTL.LEAGUE_FIXTURES, async () => {
+      const data = await this.request<{ response: any[] }>("/fixtures", { league: leagueId, season, last: count });
+      return data.response.map(mapFixture).reverse();
+    });
+  }
+
+  async getTopScorers(leagueId: number, season: number): Promise<PlayerStatEntry[]> {
+    if (this.isMockMode) return getMockTopScorers(leagueId);
+    return this.cache.getOrSet(`top-scorers:${leagueId}:${season}`, TTL.TOP_STATS, async () => {
+      const data = await this.request<{ response: any[] }>("/players/topscorers", { league: leagueId, season });
+      return data.response.map((r, i) => mapPlayerStatEntry(r, i + 1, "goals"));
+    });
+  }
+
+  async getTopAssists(leagueId: number, season: number): Promise<PlayerStatEntry[]> {
+    if (this.isMockMode) return getMockTopAssists(leagueId);
+    return this.cache.getOrSet(`top-assists:${leagueId}:${season}`, TTL.TOP_STATS, async () => {
+      const data = await this.request<{ response: any[] }>("/players/topassists", { league: leagueId, season });
+      return data.response.map((r, i) => mapPlayerStatEntry(r, i + 1, "assists"));
+    });
   }
 }
