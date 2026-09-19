@@ -26,4 +26,29 @@ export class LeaguesController {
     if (!standing) throw new NotFoundException("Standings not found for this league/season");
     return standing;
   }
+
+  @Get(":id/fixtures")
+  async fixtures(
+    @Param("id", ParseIntPipe) id: number,
+    @Query("season") season?: string,
+    @Query("count") count?: string,
+    @Query("page") page?: string,
+  ) {
+    const year = season ? parseInt(season, 10) : new Date().getFullYear();
+    const n = count ? parseInt(count, 10) : 10;
+    const p = page ? parseInt(page, 10) : 1;
+    return this.football.getLeagueRecentFixtures(id, year, n, p);
+  }
+
+  @Get(":id/top-scorers")
+  async topScorers(@Param("id", ParseIntPipe) id: number, @Query("season") season?: string) {
+    const year = season ? parseInt(season, 10) : new Date().getFullYear();
+    return this.football.getTopScorers(id, year);
+  }
+
+  @Get(":id/top-assists")
+  async topAssists(@Param("id", ParseIntPipe) id: number, @Query("season") season?: string) {
+    const year = season ? parseInt(season, 10) : new Date().getFullYear();
+    return this.football.getTopAssists(id, year);
+  }
 }

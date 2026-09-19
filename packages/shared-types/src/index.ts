@@ -11,6 +11,7 @@ export interface League {
   logo: string | null;
   country: Country;
   season: number;
+  seasons: number[];
 }
 
 export interface Team {
@@ -83,6 +84,15 @@ export interface Player {
 export interface Squad {
   team: Pick<Team, "id" | "name" | "logo">;
   players: Player[];
+}
+
+export type PlayerStatCategory = "goals" | "assists";
+
+export interface PlayerStatEntry {
+  rank: number;
+  player: Pick<Player, "id" | "name" | "photo" | "nationality">;
+  team: Pick<Team, "id" | "name" | "logo">;
+  value: number;
 }
 
 export type TransferDirection = "IN" | "OUT";

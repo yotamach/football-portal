@@ -12,9 +12,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <Navbar />
-        <DemoBanner />
-        {children}
+        <div style={{ display: "flex", minHeight: "100vh" }}>
+          <Navbar />
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+            <DemoBanner />
+            <div style={{ flex: 1 }}>{children}</div>
+          </div>
+        </div>
       </body>
     </html>
   );
