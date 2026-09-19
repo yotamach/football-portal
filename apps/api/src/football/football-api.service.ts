@@ -6,6 +6,7 @@ import type { Fixture, League, PlayerStatEntry, Squad, Standing, Team, Transfer 
 import type { AppConfig } from "../config/configuration";
 import { RedisCacheService } from "../cache/redis-cache.service";
 import { mapFixture, mapLeague, mapPlayerStatEntry, mapSquad, mapStanding, mapTeam } from "./api-football.mappers";
+import { isAdultFixture, isAdultLeague, isAdultTeam } from "./football-filters";
 import {
   FAVORITE_TEAM_ID,
   getMockLastResult,
@@ -75,7 +76,7 @@ export class FootballApiService {
     if (this.isMockMode) return MOCK_LEAGUES;
     return this.cache.getOrSet("leagues:all", TTL.LEAGUES, async () => {
       const data = await this.request<{ response: any[] }>("/leagues", { current: "true" });
-      return data.response.map(mapLeague);
+      return data.response.map(mapLeague).filter(isAdultLeague);
     });
   }
 
@@ -83,7 +84,7 @@ export class FootballApiService {
     if (this.isMockMode) return teamId === FAVORITE_TEAM_ID ? MOCK_LEAGUES : [];
     return this.cache.getOrSet(`leagues:team:${teamId}`, TTL.LEAGUES, async () => {
       const data = await this.request<{ response: any[] }>("/leagues", { team: teamId, current: "true" });
-      return data.response.map(mapLeague);
+      return data.response.map(mapLeague).filter(isAdultLeague);
     });
   }
 
@@ -100,7 +101,7 @@ export class FootballApiService {
     if (this.isMockMode) return leagueId === MOCK_STANDINGS.leagueId ? Object.values(MOCK_TEAMS) : [];
     return this.cache.getOrSet(`teams:league:${leagueId}:${season}`, TTL.LEAGUES, async () => {
       const data = await this.request<{ response: any[] }>("/teams", { league: leagueId, season });
-      return data.response.map(mapTeam);
+      return data.response.map(mapTeam).filter(isAdultTeam);
     });
   }
 
@@ -157,7 +158,7 @@ export class FootballApiService {
     if (this.isMockMode) return getMockLiveFixtures();
     // Never cached — this is the source the WebSocket poller diffs against.
     const data = await this.request<{ response: any[] }>("/fixtures", { live: "all" });
-    return data.response.map(mapFixture);
+    return data.response.map(mapFixture).filter(isAdultFixture);
   }
 
   async getTodayFixtures(): Promise<Fixture[]> {
@@ -165,7 +166,7 @@ export class FootballApiService {
     return this.cache.getOrSet("fixtures:today", TTL.FIXTURES_TODAY, async () => {
       const date = new Date().toISOString().slice(0, 10);
       const data = await this.request<{ response: any[] }>("/fixtures", { date });
-      return data.response.map(mapFixture);
+      return data.response.map(mapFixture).filter(isAdultFixture);
     });
   }
 
@@ -178,7 +179,7 @@ export class FootballApiService {
         this.request<{ response: any[] }>("/fixtures", { team: id, next: 5 }).catch(() => ({ response: [] })),
       ),
     );
-    return results.flatMap((r) => r.response.map(mapFixture));
+    return results.flatMap((r) => r.response.map(mapFixture)).filter(isAdultFixture);
   }
 
   async getLastResult(teamId: number): Promise<Fixture | null> {
@@ -196,7 +197,7 @@ export class FootballApiService {
   async searchTeams(query: string): Promise<Team[]> {
     if (this.isMockMode) return searchMockTeams(query);
     const data = await this.request<{ response: any[] }>("/teams", { search: query });
-    return data.response.map(mapTeam);
+    return data.response.map(mapTeam).filter(isAdultTeam);
   }
 
   /** A team's most recent finished matches, most recent first. */
@@ -208,13 +209,26 @@ export class FootballApiService {
     });
   }
 
-  /** All matches from the league's most recently completed period, most recent first. */
-  async getLeagueRecentFixtures(leagueId: number, season: number, count = 10): Promise<Fixture[]> {
-    if (this.isMockMode) return getMockLeagueRecentFixtures(leagueId, count);
-    return this.cache.getOrSet(`league-fixtures:${leagueId}:${season}:${count}`, TTL.LEAGUE_FIXTURES, async () => {
-      const data = await this.request<{ response: any[] }>("/fixtures", { league: leagueId, season, last: count });
-      return data.response.map(mapFixture).reverse();
-    });
+  /**
+   * A page of the league's most recently completed matches, most recent first.
+   * `page` walks further back in history: page 1 is the latest `count` matches,
+   * page 2 the `count` before those, and so on — lets the UI infinite-scroll
+   * through match history without refetching what it already has.
+   */
+  async getLeagueRecentFixtures(leagueId: number, season: number, count = 10, page = 1): Promise<Fixture[]> {
+    if (this.isMockMode) return getMockLeagueRecentFixtures(leagueId, count, page);
+    return this.cache.getOrSet(
+      `league-fixtures:${leagueId}:${season}:${count}:${page}`,
+      TTL.LEAGUE_FIXTURES,
+      async () => {
+        const total = count * page;
+        const data = await this.request<{ response: any[] }>("/fixtures", { league: leagueId, season, last: total });
+        const all = data.response.map(mapFixture); // ascending: oldest first, newest last
+        const end = Math.max(0, all.length - count * (page - 1));
+        const start = Math.max(0, end - count);
+        return all.slice(start, end).reverse();
+      },
+    );
   }
 
   async getTopScorers(leagueId: number, season: number): Promise<PlayerStatEntry[]> {

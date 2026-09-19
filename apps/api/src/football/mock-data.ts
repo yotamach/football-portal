@@ -244,11 +244,12 @@ export function getMockTeamLastFixtures(teamId: number, count: number): Fixture[
 }
 
 /** Recent fixtures across a whole league/season — used for the "last period" matches list. */
-export function getMockLeagueRecentFixtures(leagueId: number, count: number): Fixture[] {
+export function getMockLeagueRecentFixtures(leagueId: number, count: number, page = 1): Fixture[] {
   if (leagueId !== MOCK_STANDINGS.leagueId) return [];
   const teamIds = Object.keys(MOCK_TEAMS).map(Number);
+  const total = count * page;
   const fixtures: Fixture[] = [];
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < total; i++) {
     const home = teamIds[(i * 2) % teamIds.length];
     const away = teamIds[(i * 2 + 1) % teamIds.length];
     fixtures.push(
@@ -266,7 +267,7 @@ export function getMockLeagueRecentFixtures(leagueId: number, count: number): Fi
       ),
     );
   }
-  return fixtures;
+  return fixtures.slice(count * (page - 1), total);
 }
 
 const MOCK_TOP_SCORER_STATS: Array<{ playerId: number; teamId: number; goals: number; assists: number }> = [
