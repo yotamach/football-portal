@@ -56,6 +56,8 @@ export type FixtureStatus =
 export interface FixtureTeamScore {
   team: Pick<Team, "id" | "name" | "logo">;
   goals: number | null;
+  /** Red cards shown so far; undefined when the data source doesn't provide match events. */
+  redCards?: number;
 }
 
 export interface Fixture {
@@ -64,7 +66,7 @@ export interface Fixture {
   status: FixtureStatus;
   elapsedMinutes: number | null;
   venue: string | null;
-  league: Pick<League, "id" | "name" | "logo"> & { country: string | null };
+  league: Pick<League, "id" | "name" | "logo"> & { country: string | null; countryFlag?: string | null };
   home: FixtureTeamScore;
   away: FixtureTeamScore;
 }

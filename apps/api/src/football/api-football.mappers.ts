@@ -137,6 +137,14 @@ export function mapPlayerStatEntry(raw: any, rank: number, category: "goals" | "
   };
 }
 
+/** Red cards (straight red or second yellow) for a team, or undefined if the payload has no events. */
+function countRedCards(events: any[] | undefined, teamId: number): number | undefined {
+  if (!Array.isArray(events)) return undefined;
+  return events.filter(
+    (e) => e.type === "Card" && e.team?.id === teamId && (e.detail === "Red Card" || e.detail === "Second Yellow card"),
+  ).length;
+}
+
 export function mapFixture(raw: any): Fixture {
   const shortStatus = raw.fixture?.status?.short ?? "NS";
   return {
@@ -150,14 +158,17 @@ export function mapFixture(raw: any): Fixture {
       name: raw.league.name,
       logo: raw.league.logo ?? null,
       country: raw.league.country ?? null,
+      countryFlag: raw.league.flag ?? null,
     },
     home: {
       team: { id: raw.teams.home.id, name: raw.teams.home.name, logo: raw.teams.home.logo ?? null },
       goals: raw.goals?.home ?? null,
+      redCards: countRedCards(raw.events, raw.teams.home.id),
     },
     away: {
       team: { id: raw.teams.away.id, name: raw.teams.away.name, logo: raw.teams.away.logo ?? null },
       goals: raw.goals?.away ?? null,
+      redCards: countRedCards(raw.events, raw.teams.away.id),
     },
   };
 }

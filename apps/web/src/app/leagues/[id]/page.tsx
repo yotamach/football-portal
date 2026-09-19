@@ -31,7 +31,7 @@ export default async function LeagueDetailPage({
           </Link>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: "6px 0 0" }}>{league?.name ?? "League"}</h1>
         </div>
-        {league && <SeasonSelect leagueId={league.id} seasons={league.seasons} selected={season} />}
+        {league && <SeasonSelect leagueId={league.id} seasons={league.seasons ?? [season]}selected={season} />}
       </div>
 
       {standing ? (

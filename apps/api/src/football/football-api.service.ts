@@ -74,7 +74,7 @@ export class FootballApiService {
 
   async getLeagues(): Promise<League[]> {
     if (this.isMockMode) return MOCK_LEAGUES;
-    return this.cache.getOrSet("leagues:all", TTL.LEAGUES, async () => {
+    return this.cache.getOrSet("leagues:all:v2", TTL.LEAGUES, async () => {
       const data = await this.request<{ response: any[] }>("/leagues", { current: "true" });
       return data.response.map(mapLeague).filter(isAdultLeague);
     });
@@ -82,7 +82,7 @@ export class FootballApiService {
 
   async getLeaguesForTeam(teamId: number): Promise<League[]> {
     if (this.isMockMode) return teamId === FAVORITE_TEAM_ID ? MOCK_LEAGUES : [];
-    return this.cache.getOrSet(`leagues:team:${teamId}`, TTL.LEAGUES, async () => {
+    return this.cache.getOrSet(`leagues:team:v2:${teamId}`, TTL.LEAGUES, async () => {
       const data = await this.request<{ response: any[] }>("/leagues", { team: teamId, current: "true" });
       return data.response.map(mapLeague).filter(isAdultLeague);
     });
