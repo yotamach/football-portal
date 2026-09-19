@@ -28,10 +28,16 @@ export class LeaguesController {
   }
 
   @Get(":id/fixtures")
-  async fixtures(@Param("id", ParseIntPipe) id: number, @Query("season") season?: string, @Query("count") count?: string) {
+  async fixtures(
+    @Param("id", ParseIntPipe) id: number,
+    @Query("season") season?: string,
+    @Query("count") count?: string,
+    @Query("page") page?: string,
+  ) {
     const year = season ? parseInt(season, 10) : new Date().getFullYear();
     const n = count ? parseInt(count, 10) : 10;
-    return this.football.getLeagueRecentFixtures(id, year, n);
+    const p = page ? parseInt(page, 10) : 1;
+    return this.football.getLeagueRecentFixtures(id, year, n, p);
   }
 
   @Get(":id/top-scorers")

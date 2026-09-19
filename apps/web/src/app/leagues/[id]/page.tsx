@@ -3,7 +3,7 @@ import type { Fixture, League, Standing } from "@football-portal/shared-types";
 import { apiFetch, apiFetchOrNull } from "@/lib/api";
 import StandingsTable from "@/components/StandingsTable";
 import SeasonSelect from "@/components/SeasonSelect";
-import MatchCard from "@/components/MatchCard";
+import RecentMatchesList from "@/components/RecentMatchesList";
 
 export default async function LeagueDetailPage({
   params,
@@ -44,15 +44,7 @@ export default async function LeagueDetailPage({
 
       <div className="card" style={{ padding: "24px 28px" }}>
         <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 16 }}>Recent Matches</div>
-        {recentFixtures.length === 0 ? (
-          <div style={{ color: "var(--text-faint)", fontSize: 13 }}>No recent matches for this season.</div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {recentFixtures.map((fixture) => (
-              <MatchCard key={fixture.id} fixture={fixture} />
-            ))}
-          </div>
-        )}
+        <RecentMatchesList leagueId={Number(leagueId)} season={season} initialFixtures={recentFixtures} />
       </div>
     </main>
   );

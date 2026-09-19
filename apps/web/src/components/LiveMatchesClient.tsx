@@ -3,9 +3,11 @@
 import { useMemo, useState } from "react";
 import type { Fixture } from "@football-portal/shared-types";
 import { useLiveFixtures } from "@/lib/socket";
+import { useInfiniteScroll } from "@/lib/useInfiniteScroll";
 import MatchCard from "./MatchCard";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+const MATCHES_PER_PAGE = 10;
 
 export default function LiveMatchesClient({ todayFixtures }: { todayFixtures: Fixture[] }) {
   const { fixtures: liveFixtures, connected } = useLiveFixtures();
@@ -20,6 +22,13 @@ export default function LiveMatchesClient({ todayFixtures }: { todayFixtures: Fi
   }, [todayFixtures, liveFixtures]);
 
   const extraLive = liveFixtures.filter((f) => !todayFixtures.some((t) => t.id === f.id));
+
+  const [visibleCount, setVisibleCount] = useState(MATCHES_PER_PAGE);
+  const hasMoreMatches = visibleCount < merged.length;
+  const sentinelRef = useInfiniteScroll(
+    () => setVisibleCount((c) => Math.min(c + MATCHES_PER_PAGE, merged.length)),
+    hasMoreMatches,
+  );
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -82,9 +91,10 @@ export default function LiveMatchesClient({ todayFixtures }: { todayFixtures: Fi
       <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700 }}>Today&apos;s matches</h2>
         {merged.length === 0 && <div style={{ color: "var(--text-faint)" }}>No matches scheduled today.</div>}
-        {merged.map((f) => (
+        {merged.slice(0, visibleCount).map((f) => (
           <MatchCard key={f.id} fixture={f} />
         ))}
+        {hasMoreMatches && <div ref={sentinelRef} style={{ height: 1 }} />}
       </section>
     </div>
   );
