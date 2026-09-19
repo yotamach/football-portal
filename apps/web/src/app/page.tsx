@@ -1,33 +1,41 @@
 import Link from "next/link";
-import type { Fixture, League, Player, Standing, Team, Transfer } from "@football-portal/shared-types";
+import type { Fixture, League, Player, PlayerStatEntry, Standing, Team } from "@football-portal/shared-types";
 import { apiFetch, apiFetchOrNull } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import TeamHero from "@/components/TeamHero";
 import StandingsTable from "@/components/StandingsTable";
 import CompetitionsList from "@/components/CompetitionsList";
 import SquadGrid from "@/components/SquadGrid";
-import TransferList from "@/components/TransferList";
+import Last5Matches from "@/components/Last5Matches";
+import PlayerStatList from "@/components/PlayerStatList";
 
 async function loadDashboard(teamId: number) {
-  const [team, lastResult, nextFixture, leagues, squad, transfers] = await Promise.all([
+  const [team, nextFixture, leagues, squad, last5] = await Promise.all([
     apiFetchOrNull<Team>(`/teams/${teamId}`, { revalidate: 3600 }),
-    apiFetchOrNull<Fixture>(`/teams/${teamId}/last-result`, { revalidate: 60 }),
     apiFetchOrNull<Fixture>(`/teams/${teamId}/next-fixture`, { revalidate: 60 }),
     apiFetch<League[]>(`/teams/${teamId}/leagues`, { revalidate: 3600 }),
     apiFetchOrNull<{ team: Pick<Team, "id" | "name" | "logo">; players: Player[] }>(`/teams/${teamId}/squad`, {
       revalidate: 3600,
     }),
-    apiFetch<Transfer[]>(`/teams/${teamId}/transfers`, { revalidate: 300 }),
+    apiFetch<Fixture[]>(`/teams/${teamId}/last-fixtures?count=5`, { revalidate: 300 }),
   ]);
 
   const primaryLeague = leagues.find((l) => l.type === "League") ?? leagues[0] ?? null;
-  const standing = primaryLeague
-    ? await apiFetchOrNull<Standing>(`/leagues/${primaryLeague.id}/standings?season=${primaryLeague.season}`, {
-        revalidate: 300,
-      })
-    : null;
+  const [standing, topScorers, topAssists] = primaryLeague
+    ? await Promise.all([
+        apiFetchOrNull<Standing>(`/leagues/${primaryLeague.id}/standings?season=${primaryLeague.season}`, {
+          revalidate: 300,
+        }),
+        apiFetch<PlayerStatEntry[]>(`/leagues/${primaryLeague.id}/top-scorers?season=${primaryLeague.season}`, {
+          revalidate: 3600,
+        }),
+        apiFetch<PlayerStatEntry[]>(`/leagues/${primaryLeague.id}/top-assists?season=${primaryLeague.season}`, {
+          revalidate: 3600,
+        }),
+      ])
+    : [null, [], []];
 
-  return { team, lastResult, nextFixture, leagues, standing, squad, transfers };
+  return { team, nextFixture, leagues, standing, squad, last5, topScorers, topAssists };
 }
 
 export default async function HomePage() {
@@ -42,7 +50,7 @@ export default async function HomePage() {
           <p style={{ color: "var(--text-dim)", marginBottom: 24 }}>
             Pick a favorite team to build your personalized dashboard.
           </p>
-          <Link href="/favorite-team" className="btn-primary" style={{ display: "inline-flex", alignItems: "center" }}>
+          <Link href="/settings" className="btn-primary" style={{ display: "inline-flex", alignItems: "center" }}>
             Choose your team
           </Link>
         </div>
@@ -82,22 +90,20 @@ export default async function HomePage() {
 
 function Dashboard({
   team,
-  lastResult,
   nextFixture,
   leagues,
   standing,
   squad,
-  transfers,
+  last5,
+  topScorers,
+  topAssists,
   highlightTeamId,
 }: Awaited<ReturnType<typeof loadDashboard>> & { highlightTeamId: number }) {
   return (
     <>
-      <TeamHero
-        teamName={team?.name ?? "Your team"}
-        teamLogo={team?.logo ?? null}
-        lastResult={lastResult}
-        nextFixture={nextFixture}
-      />
+      <TeamHero teamName={team?.name ?? "Your team"} teamLogo={team?.logo ?? null} nextFixture={nextFixture} />
+
+      {squad && <SquadGrid players={squad.players} />}
 
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
         <div style={{ flex: 2 }}>
@@ -114,9 +120,16 @@ function Dashboard({
         </div>
       </div>
 
-      {squad && <SquadGrid players={squad.players} />}
+      <Last5Matches fixtures={last5} />
 
-      <TransferList transfers={transfers} />
+      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+        <div style={{ flex: 1 }}>
+          <PlayerStatList title="Top Scorers" unitLabel="goals" entries={topScorers} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <PlayerStatList title="Top Assists" unitLabel="assists" entries={topAssists} />
+        </div>
+      </div>
     </>
   );
 }

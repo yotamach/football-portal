@@ -30,8 +30,11 @@ export async function apiFetch<T>(path: string, opts: FetchOptions = {}): Promis
     const body = await res.json().catch(() => ({ message: res.statusText }));
     throw new ApiError(res.status, body.message ?? "Request failed");
   }
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+  // NestJS sends an empty body (not JSON "null") for handlers returning null/undefined —
+  // treat that the same as a 204, rather than letting res.json() throw on empty input.
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 /** Same as apiFetch, but returns null instead of throwing on 404 — handy for "optional" lookups. */

@@ -2,6 +2,7 @@ import type {
   Fixture,
   League,
   Player,
+  PlayerStatEntry,
   Squad,
   Standing,
   Team,
@@ -31,6 +32,9 @@ export const MOCK_TEAMS: Record<number, Team> = {
 
 export const FAVORITE_TEAM_ID = 101;
 
+export const CURRENT_SEASON = 2026;
+const MOCK_SEASONS = [2026, 2025, 2024, 2023, 2022];
+
 export const MOCK_LEAGUES: League[] = [
   {
     id: 1,
@@ -38,7 +42,8 @@ export const MOCK_LEAGUES: League[] = [
     type: "League",
     logo: null,
     country: { name: "Fictionland", code: "FL", flag: null },
-    season: 2026,
+    season: CURRENT_SEASON,
+    seasons: MOCK_SEASONS,
   },
   {
     id: 2,
@@ -46,7 +51,8 @@ export const MOCK_LEAGUES: League[] = [
     type: "Cup",
     logo: null,
     country: { name: "Fictionland", code: "FL", flag: null },
-    season: 2026,
+    season: CURRENT_SEASON,
+    seasons: MOCK_SEASONS,
   },
   {
     id: 3,
@@ -54,7 +60,8 @@ export const MOCK_LEAGUES: League[] = [
     type: "Cup",
     logo: null,
     country: { name: "World", code: null, flag: null },
-    season: 2026,
+    season: CURRENT_SEASON,
+    seasons: MOCK_SEASONS,
   },
   {
     id: 4,
@@ -62,7 +69,8 @@ export const MOCK_LEAGUES: League[] = [
     type: "League",
     logo: null,
     country: { name: "Meridia", code: "MD", flag: null },
-    season: 2026,
+    season: CURRENT_SEASON,
+    seasons: MOCK_SEASONS,
   },
   {
     id: 5,
@@ -70,7 +78,8 @@ export const MOCK_LEAGUES: League[] = [
     type: "League",
     logo: null,
     country: { name: "Northshore", code: "NS", flag: null },
-    season: 2026,
+    season: CURRENT_SEASON,
+    seasons: MOCK_SEASONS,
   },
 ];
 
@@ -195,4 +204,111 @@ export function searchMockFixturesByTeam(query: string): Fixture[] {
   return all.filter(
     (f) => f.home.team.name.toLowerCase().includes(q) || f.away.team.name.toLowerCase().includes(q),
   );
+}
+
+export function searchMockTeams(query: string): Team[] {
+  const q = query.trim().toLowerCase();
+  const all = Object.values(MOCK_TEAMS);
+  if (!q) return all;
+  return all.filter((t) => t.name.toLowerCase().includes(q));
+}
+
+/** Deterministic recent-history fixtures for a team, most recent first, all FINISHED. */
+export function getMockTeamLastFixtures(teamId: number, count: number): Fixture[] {
+  if (!MOCK_TEAMS[teamId]) return [];
+  const opponents = Object.keys(MOCK_TEAMS)
+    .map(Number)
+    .filter((id) => id !== teamId);
+  const fixtures: Fixture[] = [];
+  for (let i = 0; i < count; i++) {
+    const opponent = opponents[i % opponents.length];
+    const homeIsUs = i % 2 === 0;
+    const usGoals = (i * 2 + 1) % 4;
+    const oppGoals = (i + 2) % 3;
+    fixtures.push(
+      buildFixture(
+        9100 + teamId * 100 + i,
+        homeIsUs ? teamId : opponent,
+        homeIsUs ? opponent : teamId,
+        homeIsUs ? usGoals : oppGoals,
+        homeIsUs ? oppGoals : usGoals,
+        "FINISHED",
+        90,
+        -(i + 1) * 7 * 24 * 60,
+        1,
+        "Premier Division",
+      ),
+    );
+  }
+  return fixtures;
+}
+
+/** Recent fixtures across a whole league/season — used for the "last period" matches list. */
+export function getMockLeagueRecentFixtures(leagueId: number, count: number): Fixture[] {
+  if (leagueId !== MOCK_STANDINGS.leagueId) return [];
+  const teamIds = Object.keys(MOCK_TEAMS).map(Number);
+  const fixtures: Fixture[] = [];
+  for (let i = 0; i < count; i++) {
+    const home = teamIds[(i * 2) % teamIds.length];
+    const away = teamIds[(i * 2 + 1) % teamIds.length];
+    fixtures.push(
+      buildFixture(
+        9200 + leagueId * 100 + i,
+        home,
+        away,
+        (i + 1) % 4,
+        i % 3,
+        "FINISHED",
+        90,
+        -(i + 1) * 3 * 24 * 60,
+        leagueId,
+        "Premier Division",
+      ),
+    );
+  }
+  return fixtures;
+}
+
+const MOCK_TOP_SCORER_STATS: Array<{ playerId: number; teamId: number; goals: number; assists: number }> = [
+  { playerId: 9, teamId: 101, goals: 14, assists: 4 },
+  { playerId: 11, teamId: 101, goals: 11, assists: 7 },
+  { playerId: 21, teamId: 102, goals: 10, assists: 3 },
+  { playerId: 31, teamId: 103, goals: 9, assists: 2 },
+  { playerId: 41, teamId: 104, goals: 8, assists: 6 },
+];
+
+const MOCK_PLAYER_NAMES: Record<number, string> = {
+  9: "T. Okafor",
+  11: "P. Lindt",
+  21: "K. Ibsen",
+  31: "R. Falco",
+  41: "M. Duarte",
+};
+
+function toMockPlayerStat(
+  entry: { playerId: number; teamId: number; goals: number; assists: number },
+  rank: number,
+  category: "goals" | "assists",
+): PlayerStatEntry {
+  const team = MOCK_TEAMS[entry.teamId];
+  return {
+    rank,
+    player: { id: entry.playerId, name: MOCK_PLAYER_NAMES[entry.playerId] ?? "Unknown", photo: null, nationality: team.country },
+    team: { id: team.id, name: team.name, logo: team.logo },
+    value: category === "goals" ? entry.goals : entry.assists,
+  };
+}
+
+export function getMockTopScorers(leagueId: number): PlayerStatEntry[] {
+  if (leagueId !== MOCK_STANDINGS.leagueId) return [];
+  return [...MOCK_TOP_SCORER_STATS]
+    .sort((a, b) => b.goals - a.goals)
+    .map((entry, i) => toMockPlayerStat(entry, i + 1, "goals"));
+}
+
+export function getMockTopAssists(leagueId: number): PlayerStatEntry[] {
+  if (leagueId !== MOCK_STANDINGS.leagueId) return [];
+  return [...MOCK_TOP_SCORER_STATS]
+    .sort((a, b) => b.assists - a.assists)
+    .map((entry, i) => toMockPlayerStat(entry, i + 1, "assists"));
 }

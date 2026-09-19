@@ -26,7 +26,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
         setError(data.message ?? "Something went wrong");
         return;
       }
-      router.push(data.user?.favoriteTeamId ? "/" : "/favorite-team");
+      router.push(data.user?.favoriteTeamId ? "/" : "/settings");
       router.refresh();
     } finally {
       setSubmitting(false);
